@@ -18,6 +18,8 @@ var conn net.Conn
 
 func main() {
 
+	// os.Exit(1)
+
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", Port))
 
 	// check if initiating the listener failed
