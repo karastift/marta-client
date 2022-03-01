@@ -30,7 +30,11 @@ func main() {
 func handleData(data string) {
 	fmt.Println("[" + time.Now().Format(time.ANSIC) + "]" + " Received: '" + data[:len(data)-1] + "'")
 
+	server.PauseListening()
+
 	server.Conn.Write([]byte("Beat me out of me\n"))
 
-	fmt.Println("Wrote")
+	server.ResumeListening()
+
+	// server.Send([]byte("Beat me out of me\n"))
 }

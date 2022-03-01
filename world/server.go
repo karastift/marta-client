@@ -8,17 +8,17 @@ import (
 )
 
 type Server struct {
-	Addr           string
-	Port           int
-	Conn           net.Conn
-	PauseListening bool
+	Addr    string
+	Port    int
+	Conn    net.Conn
+	pausing bool
 }
 
 func NewServer(addr string, port int) *Server {
 	return &Server{
-		Addr:           addr,
-		Port:           port,
-		PauseListening: false,
+		Addr:    addr,
+		Port:    port,
+		pausing: false,
 	}
 }
 
@@ -33,7 +33,7 @@ func (server *Server) Send(data []byte) ([]byte, error) {
 
 func (server *Server) Listen(handleData func(data string)) {
 	for {
-		if server.PauseListening {
+		if server.pausing {
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -46,6 +46,14 @@ func (server *Server) Listen(handleData func(data string)) {
 
 		go handleData(data)
 	}
+}
+
+func (server *Server) PauseListening() {
+	server.pausing = true
+}
+
+func (server *Server) ResumeListening() {
+	server.pausing = false
 }
 
 func (server *Server) IsConnected() bool {
