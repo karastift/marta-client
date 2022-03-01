@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/karastift/marta-client/world"
@@ -19,20 +20,36 @@ var server *world.Server
 func main() {
 	server = world.NewServer(marta, port)
 
-	_, err := server.Login()
+	loginToServer()
 
-	if err != nil {
-		panic(errors.New("failed logging into marta: marta is offline"))
-	}
-	log("Successfully logged into marta.")
-
-	err = listenToServer(handleData)
+	err := listenToServer(handleData)
 
 	if err != nil {
 		panic(err)
 	}
 }
 
+// Tries to log into server. Will try to reconnect every 5 seconds.
+func loginToServer() net.Conn {
+	for {
+
+		log("Trying to log into marta.")
+
+		conn, err := server.Login()
+
+		if err != nil {
+			log("Login failed. Retrying in 5 seconds.")
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		log("Successfully logged into marta.")
+
+		return conn
+	}
+}
+
+// Listens to data from server and passes it into the `handleData` function.
 func listenToServer(handleData func(data string)) error {
 
 	if !server.IsLoggedIn() {
@@ -43,8 +60,10 @@ func listenToServer(handleData func(data string)) error {
 		data, err := bufio.NewReader(server.Conn).ReadString('\n')
 
 		if err != nil {
-			// TODO: maybe add reconnection logic later
-			return errors.New("failed listening to marta: marta is offline")
+			// marta is offline
+			// try to reconnect
+			loginToServer()
+			continue
 		}
 
 		go handleData(data)
@@ -53,7 +72,7 @@ func listenToServer(handleData func(data string)) error {
 
 func handleData(data string) {
 	log("Received: '" + data[:len(data)-1] + "'")
-	server.Conn.Write([]byte("you sent " + data + "\n"))
+	// server.Conn.Write([]byte("you sent " + data + "\n"))
 }
 
 func log(str string) {

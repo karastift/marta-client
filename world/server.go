@@ -13,6 +13,7 @@ type Server struct {
 	Conn net.Conn
 }
 
+// Returns pointer to an instance of Server.
 func NewServer(addr string, port int) *Server {
 	return &Server{
 		Addr: addr,
@@ -20,11 +21,14 @@ func NewServer(addr string, port int) *Server {
 	}
 }
 
+// Checks if connection is not `nil`.
 func (server *Server) IsLoggedIn() bool {
 	return server.Conn != nil
 }
 
+// Logs into server.
 func (server *Server) Login() (net.Conn, error) {
+	// connect to server
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", server.Addr, server.Port))
 
 	if err != nil {
@@ -34,7 +38,7 @@ func (server *Server) Login() (net.Conn, error) {
 	server.Conn = conn
 
 	// send login code
-	fmt.Fprintf(conn, "marta login\n")
+	conn.Write([]byte("marta login\n"))
 
 	// receive login response
 	status, err := bufio.NewReader(conn).ReadString('\n')
@@ -47,14 +51,16 @@ func (server *Server) Login() (net.Conn, error) {
 	if checkResponse(string(status)) {
 		return conn, nil
 	} else {
-		return nil, errors.New("login failied: wrong login response")
+		return nil, errors.New("login failed: wrong login response")
 	}
 }
 
+// Disconnect from server and close connection.
 func (server *Server) Disconnect() {
 	server.Conn.Close()
 }
 
+// Check login response from server.
 func checkResponse(res string) bool {
 	return res == "marta logged in\n"
 }
