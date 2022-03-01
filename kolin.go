@@ -12,10 +12,12 @@ import (
 )
 
 const marta = "127.0.0.1"
-const port = 1111
+const port = 2222
+
+var server *world.Server
 
 func main() {
-	server := world.NewServer(marta, port)
+	server = world.NewServer(marta, port)
 
 	_, err := server.Login()
 
@@ -24,14 +26,14 @@ func main() {
 	}
 	log("Successfully logged into marta.")
 
-	err = listenTo(server, handleData)
+	err = listenToServer(handleData)
 
 	if err != nil {
 		panic(err)
 	}
 }
 
-func listenTo(server *world.Server, handleData func(data string)) error {
+func listenToServer(handleData func(data string)) error {
 
 	if !server.IsLoggedIn() {
 		panic(errors.New("failed listening to marta: not logged into marta"))
@@ -51,6 +53,7 @@ func listenTo(server *world.Server, handleData func(data string)) error {
 
 func handleData(data string) {
 	log("Received: '" + data[:len(data)-1] + "'")
+	server.Conn.Write([]byte("you sent " + data + "\n"))
 }
 
 func log(str string) {
