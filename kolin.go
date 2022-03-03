@@ -8,18 +8,16 @@ import (
 	"fmt"
 	"net"
 	"time"
-
-	"github.com/karastift/marta-client/world"
 )
 
 const marta = "127.0.0.1"
 const port = 2222
 
-var server *world.Server
+var server *Server
 
 func main() {
 
-	server = world.NewServer(marta, port)
+	server = NewServer(marta, port)
 
 	loginToServer()
 
