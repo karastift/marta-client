@@ -38,6 +38,7 @@ func (server *Server) Login() (net.Conn, error) {
 	server.Conn = conn
 
 	// send login code
+	// TODO: also send data about client
 	conn.Write([]byte("marta login\n"))
 
 	// receive login response
