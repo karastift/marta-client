@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -40,21 +41,8 @@ func NewInfo() *Info {
 
 	info.Os = strings.Title(runtime.GOOS)
 
-	mac, err := getMacAddr()
-
-	if err != nil {
-		panic(err)
-	}
-
-	info.MacAdress = mac[0]
-
-	ip, err := getIP()
-
-	if err != nil {
-		panic(err)
-	}
-
-	info.LocalAddress = ip.String()
+	info.LocalAddress = getIP()
+	info.MacAdress = getMacAddr()
 
 	return &info
 }
@@ -85,31 +73,31 @@ Administrator	%t
 LocalAddress	%s`, info.Username, info.Name, info.Uid, info.HomeDir, info.Os, info.Device, info.MacAdress, info.Administrator, info.LocalAddress)
 }
 
-func getMacAddr() ([]string, error) {
-	ifas, err := net.Interfaces()
-	if err != nil {
-		return nil, err
-	}
-	var as []string
-	for _, ifa := range ifas {
-		a := ifa.HardwareAddr.String()
-		if a != "" {
-			as = append(as, a)
-		}
-	}
-	return as, nil
-}
-
-func getIP() (net.IP, error) {
+func getIP() string {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 
 	if err != nil {
-		return nil, err
+		logger.Println("Failed to get IP.")
+		return ""
 	}
 
 	defer conn.Close()
 
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 
-	return localAddr.IP, nil
+	return localAddr.String()
+}
+
+func getMacAddr() (addr string) {
+	interfaces, err := net.Interfaces()
+	if err == nil {
+		for _, i := range interfaces {
+			if i.Flags&net.FlagUp != 0 && !bytes.Equal(i.HardwareAddr, nil) {
+				// Don't use random as we have a real address
+				addr = i.HardwareAddr.String()
+				break
+			}
+		}
+	}
+	return
 }
