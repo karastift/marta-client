@@ -4,8 +4,7 @@ package main
 
 import (
 	"bufio"
-	"errors"
-	"fmt"
+	"log"
 	"net"
 	"time"
 )
@@ -14,8 +13,11 @@ const marta = "127.0.0.1"
 const port = 2222
 
 var server *Server
+var logger *log.Logger
 
 func main() {
+
+	logger = log.Default()
 
 	server = NewServer(marta, port)
 
@@ -32,17 +34,17 @@ func main() {
 func loginToServer() net.Conn {
 	for {
 
-		log("Trying to log into marta.")
+		logger.Println("Trying to log into marta.")
 
 		conn, err := server.Login()
 
 		if err != nil {
-			log("Login failed. Retrying in 5 seconds.")
+			logger.Println("Login failed. Retrying in 5 seconds.")
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
-		log("Successfully logged into marta.")
+		logger.Println("Successfully logged into marta.")
 
 		return conn
 	}
@@ -52,7 +54,7 @@ func loginToServer() net.Conn {
 func listenToServer(handleData func(data string)) error {
 
 	if !server.IsLoggedIn() {
-		panic(errors.New("failed listening to marta: not logged into marta"))
+		logger.Panicln("failed listening to marta: not logged into marta")
 	}
 
 	for {
@@ -76,7 +78,7 @@ func handleData(data string) {
 
 	// if command is malformed, just answer with \n so the server knows that the client didnt time out
 	if err != nil {
-		log(err.Error())
+		logger.Println(err.Error())
 		send("understood but not understood\n")
 		return
 	}
@@ -91,7 +93,7 @@ func handleData(data string) {
 
 // Responds to "!ping" command.
 func ping(cmd *Command) error {
-	log("Got pinged by marta.")
+	logger.Println("Got pinged by marta.")
 
 	send("Pong\n")
 
@@ -100,7 +102,7 @@ func ping(cmd *Command) error {
 
 // Responds to "!info" command.
 func info(cmd *Command) error {
-	log("Info requested by marta.")
+	logger.Println("Info requested by marta.")
 
 	info := NewInfo()
 
@@ -117,9 +119,4 @@ func sendBytes(data []byte) {
 // Converts data to bytes and sends it to the server.
 func send(data string) {
 	server.Conn.Write([]byte(data))
-}
-
-// Logs.
-func log(str string) {
-	fmt.Println("[" + time.Now().Format(time.ANSIC) + "] " + str)
 }
