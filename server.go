@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"time"
 )
 
 type Server struct {
@@ -37,12 +38,21 @@ func (server *Server) Login() (net.Conn, error) {
 
 	server.Conn = conn
 
-	// send login code
-	// TODO: also send data about client
-	conn.Write([]byte("marta login\n"))
+	// send login code and info about client
+
+	info := NewInfo()
+
+	conn.Write([]byte("marta login|" + string(info.Json()) + "\n"))
+
+	// only wait 5 seconds for marta to responds
+	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 
 	// receive login response
 	status, err := bufio.NewReader(conn).ReadString('\n')
+
+	// reset deadline, because client should listen (listenToServer() in kolin.go)
+	// time.Time{} is apperently a "zero" value
+	conn.SetReadDeadline(time.Time{})
 
 	if err != nil {
 		return nil, errors.New("login failed: failed to receive login response")
