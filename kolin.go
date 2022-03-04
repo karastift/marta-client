@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -23,7 +24,8 @@ var logger *log.Logger
 
 func main() {
 
-	logger = log.Default()
+	f := initLogger()
+	defer f.Close()
 
 	server = NewServer(marta, port)
 
@@ -34,6 +36,23 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// Initializes the logger. Returns the filedecriptor so the main function can close it when it finishes.
+// Kolin also writes to stdout.
+func initLogger() *os.File {
+
+	f, err := os.OpenFile("kolin.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		logger.Fatalf("error opening file: %v", err)
+	}
+
+	logger = log.Default()
+
+	wrt := io.MultiWriter(os.Stdout, f)
+	logger.SetOutput(wrt)
+
+	return f
 }
 
 // Tries to log into server. Will try to reconnect every 5 seconds.
