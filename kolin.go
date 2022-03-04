@@ -15,8 +15,8 @@ import (
 	"time"
 )
 
-const marta = "127.0.0.1"
-const port = 2222
+const marta string = "127.0.0.1"
+const port int = 2222
 const delimiter string = "#+2%&"
 
 var server *Server
