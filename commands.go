@@ -8,8 +8,11 @@ import (
 // use a map so we can check for existing commands by accessing a key
 // store number of needed arguments as value
 var commands map[string]int = map[string]int{
-	"ping": 0,
-	"info": 0,
+	"ping":       0,
+	"info":       0,
+	"initshell":  0,
+	"closeshell": 0,
+	"shell":      0,
 }
 
 const cmdPrefix string = "!"

