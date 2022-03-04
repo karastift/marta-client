@@ -122,7 +122,7 @@ func handleData(data string) {
 func ping(cmd *Command) error {
 	logger.Println("Got pinged by marta.")
 
-	send("Pong\n")
+	send("pong\n")
 
 	return nil
 }
