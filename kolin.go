@@ -44,13 +44,12 @@ func initLogger() *os.File {
 
 	f, err := os.OpenFile("kolin.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		logger.Fatalf("error opening file: %v", err)
+		log.Fatalf("error opening file: %v", err)
 	}
 
-	logger = log.Default()
-
 	wrt := io.MultiWriter(os.Stdout, f)
-	logger.SetOutput(wrt)
+
+	logger = log.New(wrt, "", log.Ldate|log.Ltime)
 
 	return f
 }
